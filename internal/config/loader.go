@@ -855,6 +855,29 @@ func ResolveRuntimeName(rigPath, override string) string {
 	return "claude"
 }
 
+// ResolveRuntimeNameForRig returns the runtime adapter name for a rig,
+// honoring a town-level default before falling back to rig settings.
+func ResolveRuntimeNameForRig(rigPath, override string) string {
+	if override != "" {
+		return override
+	}
+	townRoot := filepath.Dir(rigPath)
+	if townDefault := LoadMayorRuntimeDefault(townRoot); townDefault != "" {
+		return townDefault
+	}
+	return ResolveRuntimeName(rigPath, "")
+}
+
+// LoadMayorRuntimeDefault returns the town-level default runtime, if any.
+func LoadMayorRuntimeDefault(townRoot string) string {
+	path := filepath.Join(townRoot, "mayor", "config.json")
+	cfg, err := LoadMayorConfig(path)
+	if err != nil {
+		return ""
+	}
+	return strings.TrimSpace(cfg.RuntimeDefault)
+}
+
 // GetRuntimeCommand is a convenience function that returns the full command string
 // for starting an LLM session. It resolves the agent config and builds the command.
 func GetRuntimeCommand(rigPath string) string {
