@@ -208,6 +208,18 @@ func (m *Manager) Start(polecat string, opts StartOptions) error {
 		return fmt.Errorf("starting runtime: %w", err)
 	}
 
+	// Accept bypass permissions warning dialog if it appears.
+	// When Claude starts with --dangerously-skip-permissions, it shows a warning that
+	// requires pressing Down to select "Yes, I accept" and Enter to confirm.
+	// This is needed for automated polecat startup.
+	_ = m.tmux.AcceptBypassPermissionsWarning(sessionID)
+
+	// Wait for Claude to be fully ready at the prompt (not just started)
+	// PRAGMATIC APPROACH: Use fixed delay rather than detection.
+	// WaitForClaudeReady has false positives (detects > in various contexts).
+	// Claude startup takes ~5-8 seconds on typical machines.
+	// Reduced from 10s to 8s since AcceptBypassPermissionsWarning already adds ~1.2s.
+	time.Sleep(8 * time.Second)
 	// Inject startup nudge for predecessor discovery via /resume
 	// This becomes the session title in Claude Code's session picker
 	address := fmt.Sprintf("%s/polecats/%s", m.rig.Name, polecat)
