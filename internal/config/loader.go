@@ -841,6 +841,20 @@ func fillRuntimeDefaults(rc *RuntimeConfig) *RuntimeConfig {
 return result
 }
 
+// ResolveRuntimeName returns the runtime adapter name for a rig.
+// If override is non-empty, it is returned directly.
+func ResolveRuntimeName(rigPath, override string) string {
+	if override != "" {
+		return override
+	}
+	rc := LoadRuntimeConfig(rigPath)
+	cmd := strings.ToLower(filepath.Base(rc.Command))
+	if strings.Contains(cmd, "codex") {
+		return "codex"
+	}
+	return "claude"
+}
+
 // GetRuntimeCommand is a convenience function that returns the full command string
 // for starting an LLM session. It resolves the agent config and builds the command.
 func GetRuntimeCommand(rigPath string) string {
