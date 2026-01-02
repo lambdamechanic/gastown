@@ -30,6 +30,7 @@ var (
 	sessionFile      string
 	sessionRigFilter string
 	sessionListJSON  bool
+	sessionRuntime   string
 )
 
 var sessionCmd = &cobra.Command{
@@ -169,6 +170,7 @@ Examples:
 func init() {
 	// Start flags
 	sessionStartCmd.Flags().StringVar(&sessionIssue, "issue", "", "Issue ID to work on")
+	sessionStartCmd.Flags().StringVar(&sessionRuntime, "runtime", "", "Runtime adapter to use (claude, codex)")
 
 	// Stop flags
 	sessionStopCmd.Flags().BoolVarP(&sessionForce, "force", "f", false, "Force immediate shutdown")
@@ -186,6 +188,7 @@ func init() {
 
 	// Restart flags
 	sessionRestartCmd.Flags().BoolVarP(&sessionForce, "force", "f", false, "Force immediate shutdown")
+	sessionRestartCmd.Flags().StringVar(&sessionRuntime, "runtime", "", "Runtime adapter to use (claude, codex)")
 
 	// Add subcommands
 	sessionCmd.AddCommand(sessionStartCmd)
@@ -262,7 +265,8 @@ func runSessionStart(cmd *cobra.Command, args []string) error {
 	}
 
 	opts := session.StartOptions{
-		Issue: sessionIssue,
+		Issue:       sessionIssue,
+		RuntimeName: sessionRuntime,
 	}
 
 	fmt.Printf("Starting session for %s/%s...\n", rigName, polecatName)
@@ -520,7 +524,9 @@ func runSessionRestart(cmd *cobra.Command, args []string) error {
 
 	// Start fresh session
 	fmt.Printf("Starting session for %s/%s...\n", rigName, polecatName)
-	opts := session.StartOptions{}
+	opts := session.StartOptions{
+		RuntimeName: sessionRuntime,
+	}
 	if err := mgr.Start(polecatName, opts); err != nil {
 		return fmt.Errorf("starting session: %w", err)
 	}
