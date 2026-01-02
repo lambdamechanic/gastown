@@ -841,6 +841,18 @@ func fillRuntimeDefaults(rc *RuntimeConfig) *RuntimeConfig {
 return result
 }
 
+func fallbackRuntimeConfigForRig(rigPath string) *RuntimeConfig {
+	if rigPath != "" {
+		if townDefault := LoadMayorRuntimeDefault(filepath.Dir(rigPath)); townDefault != "" {
+			return &RuntimeConfig{
+				Command: townDefault,
+				Args:    []string{"--dangerously-skip-permissions"},
+			}
+		}
+	}
+	return DefaultRuntimeConfig()
+}
+
 // ResolveRuntimeName returns the runtime adapter name for a rig.
 // If override is non-empty, it is returned directly.
 func ResolveRuntimeName(rigPath, override string) string {
@@ -876,6 +888,19 @@ func LoadMayorRuntimeDefault(townRoot string) string {
 		return ""
 	}
 	return strings.TrimSpace(cfg.RuntimeDefault)
+}
+
+// LoadRuntimeConfigForTown returns a RuntimeConfig using the town-level default.
+func LoadRuntimeConfigForTown(townRoot string) *RuntimeConfig {
+	if townRoot != "" {
+		if townDefault := LoadMayorRuntimeDefault(townRoot); townDefault != "" {
+			return &RuntimeConfig{
+				Command: townDefault,
+				Args:    []string{"--dangerously-skip-permissions"},
+			}
+		}
+	}
+	return DefaultRuntimeConfig()
 }
 
 // GetRuntimeCommand is a convenience function that returns the full command string
