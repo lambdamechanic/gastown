@@ -28,6 +28,7 @@ gt
 
 # Runtime state
 state.json
+state/
 .runtime/
 .beads/redirect
 
