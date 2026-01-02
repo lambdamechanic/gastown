@@ -333,7 +333,7 @@ func startDeaconSession(t *tmux.Tmux) error {
 	// Restarts are handled by daemon via ensureDeaconRunning on each heartbeat
 	// The startup hook handles context loading automatically
 	// Export GT_ROLE and BD_ACTOR in the command since tmux SetEnvironment only affects new panes
-	if err := t.SendKeys(DeaconSessionName, config.BuildAgentStartupCommand("deacon", "deacon", "", "")); err != nil {
+	if err := t.SendKeys(DeaconSessionName, config.BuildAgentStartupCommandForTown("deacon", "deacon", townRoot, "")); err != nil {
 		return fmt.Errorf("sending command: %w", err)
 	}
 

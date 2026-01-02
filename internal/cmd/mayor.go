@@ -134,8 +134,8 @@ func startMayorSession(t *tmux.Tmux) error {
 	// Launch Claude - the startup hook handles 'gt prime' automatically
 	// Use SendKeysDelayed to allow shell initialization after NewSession
 	// Export GT_ROLE and BD_ACTOR in the command since tmux SetEnvironment only affects new panes
-	// Mayor uses default runtime config (empty rigPath) since it's not rig-specific
-	claudeCmd := config.BuildAgentStartupCommand("mayor", "mayor", "", "")
+	// Mayor uses town-level runtime defaults since it's not rig-specific
+	claudeCmd := config.BuildAgentStartupCommandForTown("mayor", "mayor", townRoot, "")
 	if err := t.SendKeysDelayed(MayorSessionName, claudeCmd, 200); err != nil {
 		return fmt.Errorf("sending command: %w", err)
 	}

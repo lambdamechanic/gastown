@@ -698,10 +698,10 @@ func LoadRuntimeConfig(rigPath string) *RuntimeConfig {
 	settingsPath := filepath.Join(rigPath, "settings", "config.json")
 	settings, err := LoadRigSettings(settingsPath)
 	if err != nil {
-		return DefaultRuntimeConfig()
+		return fallbackRuntimeConfigForRig(rigPath)
 	}
 	if settings.Runtime == nil {
-		return DefaultRuntimeConfig()
+		return fallbackRuntimeConfigForRig(rigPath)
 	}
 	// Fill in defaults for empty fields
 	rc := settings.Runtime
@@ -712,6 +712,18 @@ func LoadRuntimeConfig(rigPath string) *RuntimeConfig {
 		rc.Args = []string{"--dangerously-skip-permissions"}
 	}
 	return rc
+}
+
+func fallbackRuntimeConfigForRig(rigPath string) *RuntimeConfig {
+	if rigPath != "" {
+		if townDefault := LoadMayorRuntimeDefault(filepath.Dir(rigPath)); townDefault != "" {
+			return &RuntimeConfig{
+				Command: townDefault,
+				Args:    []string{"--dangerously-skip-permissions"},
+			}
+		}
+	}
+	return DefaultRuntimeConfig()
 }
 
 // ResolveRuntimeName returns the runtime adapter name for a rig.
@@ -749,6 +761,19 @@ func LoadMayorRuntimeDefault(townRoot string) string {
 		return ""
 	}
 	return strings.TrimSpace(cfg.RuntimeDefault)
+}
+
+// LoadRuntimeConfigForTown returns a RuntimeConfig using the town-level default.
+func LoadRuntimeConfigForTown(townRoot string) *RuntimeConfig {
+	if townRoot != "" {
+		if townDefault := LoadMayorRuntimeDefault(townRoot); townDefault != "" {
+			return &RuntimeConfig{
+				Command: townDefault,
+				Args:    []string{"--dangerously-skip-permissions"},
+			}
+		}
+	}
+	return DefaultRuntimeConfig()
 }
 
 // GetRuntimeCommand is a convenience function that returns the full command string
@@ -798,6 +823,34 @@ func BuildStartupCommand(envVars map[string]string, rigPath, prompt string) stri
 	return cmd
 }
 
+// BuildTownStartupCommand builds a startup command using town-level runtime defaults.
+func BuildTownStartupCommand(envVars map[string]string, townRoot, prompt string) string {
+	rc := LoadRuntimeConfigForTown(townRoot)
+
+	// Build environment export prefix
+	var exports []string
+	for k, v := range envVars {
+		exports = append(exports, fmt.Sprintf("%s=%s", k, v))
+	}
+
+	// Sort for deterministic output
+	sort.Strings(exports)
+
+	var cmd string
+	if len(exports) > 0 {
+		cmd = "export " + strings.Join(exports, " ") + " && "
+	}
+
+	// Add runtime command
+	if prompt != "" {
+		cmd += rc.BuildCommandWithPrompt(prompt)
+	} else {
+		cmd += rc.BuildCommand()
+	}
+
+	return cmd
+}
+
 // BuildAgentStartupCommand is a convenience function for starting agent sessions.
 // It sets standard environment variables (GT_ROLE, BD_ACTOR, GIT_AUTHOR_NAME)
 // and builds the full startup command.
@@ -808,6 +861,16 @@ func BuildAgentStartupCommand(role, bdActor, rigPath, prompt string) string {
 		"GIT_AUTHOR_NAME": bdActor,
 	}
 	return BuildStartupCommand(envVars, rigPath, prompt)
+}
+
+// BuildAgentStartupCommandForTown builds the startup command for town-level agents.
+func BuildAgentStartupCommandForTown(role, bdActor, townRoot, prompt string) string {
+	envVars := map[string]string{
+		"GT_ROLE":         role,
+		"BD_ACTOR":        bdActor,
+		"GIT_AUTHOR_NAME": bdActor,
+	}
+	return BuildTownStartupCommand(envVars, townRoot, prompt)
 }
 
 // BuildPolecatStartupCommand builds the startup command for a polecat.
