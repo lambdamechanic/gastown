@@ -26,6 +26,7 @@ type MayorConfig struct {
 	Daemon          *DaemonConfig    `json:"daemon,omitempty"`            // daemon settings
 	Deacon          *DeaconConfig    `json:"deacon,omitempty"`            // deacon settings
 	DefaultCrewName string           `json:"default_crew_name,omitempty"` // default crew name for new rigs
+	RuntimeDefault  string           `json:"runtime_default,omitempty"`   // default runtime adapter (claude, codex)
 }
 
 // DaemonConfig represents daemon process settings.

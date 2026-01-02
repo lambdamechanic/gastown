@@ -135,7 +135,7 @@ func (m *Manager) Start(polecat string, opts StartOptions) error {
 		workDir = m.polecatDir(polecat)
 	}
 
-	runtimeName := config.ResolveRuntimeName(m.rig.Path, opts.RuntimeName)
+	runtimeName := config.ResolveRuntimeNameForRig(m.rig.Path, opts.RuntimeName)
 	if runtimeName == "claude" {
 		// Ensure Claude settings exist (autonomous role needs mail in SessionStart)
 		if err := claude.EnsureSettingsForRole(workDir, "polecat"); err != nil {
