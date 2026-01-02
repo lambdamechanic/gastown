@@ -4,6 +4,8 @@ package claude
 import (
 	"context"
 	"errors"
+	"fmt"
+	"strings"
 	"time"
 
 	"github.com/steveyegge/gastown/internal/constants"
@@ -88,7 +90,7 @@ func (r *Runtime) IsReady(ctx context.Context, handle runtime.SessionHandle) (bo
 	if r.tmux == nil {
 		return false, errors.New("claude runtime requires tmux")
 	}
-	if err := r.tmux.WaitForClaudeReady(handle.SessionID, 2*time.Second); err != nil {
+	if err := WaitForClaudeReady(r.tmux, handle.SessionID, 2*time.Second); err != nil {
 		return false, nil
 	}
 	return true, nil
@@ -133,6 +135,50 @@ func (r *Runtime) ListSessions(ctx context.Context, filter runtime.SessionFilter
 		})
 	}
 	return handles, nil
+}
+
+// WaitForClaudeReady polls until Claude's prompt indicator appears in the pane.
+// Claude is ready when we see "> " at the start of a line (the input prompt).
+// This is more reliable than just checking if node is running.
+//
+// IMPORTANT: Bootstrap vs Steady-State Observation
+//
+// This function uses regex-like detection of Claude's prompt - a ZFC violation.
+// ZFC (Zero False Commands) principle: AI should observe AI, not regex.
+//
+// Bootstrap (acceptable):
+//
+//	During cold startup when no AI agent is running, the daemon uses this
+//	function to get the Deacon online. Regex is acceptable here.
+//
+// Steady-State (use AI observation instead):
+//
+//	Once any AI agent is running, observation should be AI-to-AI:
+//	- Deacon starting polecats → use 'gt deacon pending' + AI analysis
+//	- Deacon restarting → Mayor watches via 'gt peek'
+//	- Mayor restarting → Deacon watches via 'gt peek'
+//
+// See: gt deacon pending (ZFC-compliant AI observation)
+// See: gt deacon trigger-pending (bootstrap mode, regex-based)
+func WaitForClaudeReady(t *tmux.Tmux, session string, timeout time.Duration) error {
+	deadline := time.Now().Add(timeout)
+	for time.Now().Before(deadline) {
+		// Capture last few lines of the pane
+		lines, err := t.CapturePaneLines(session, 10)
+		if err != nil {
+			time.Sleep(200 * time.Millisecond)
+			continue
+		}
+		// Look for Claude's prompt indicator "> " at start of line
+		for _, line := range lines {
+			trimmed := strings.TrimSpace(line)
+			if strings.HasPrefix(trimmed, "> ") || trimmed == ">" {
+				return nil
+			}
+		}
+		time.Sleep(200 * time.Millisecond)
+	}
+	return fmt.Errorf("timeout waiting for Claude prompt")
 }
 
 func init() {

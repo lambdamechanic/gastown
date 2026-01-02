@@ -158,7 +158,7 @@ func (d *Daemon) heartbeat(state *State) {
 
 	// 3. Trigger pending polecat spawns (bootstrap mode - ZFC violation acceptable)
 	// This ensures polecats get nudged even when Deacon isn't in a patrol cycle.
-	// Uses regex-based WaitForClaudeReady, which is acceptable for daemon bootstrap.
+	// Uses regex-based Claude prompt detection, which is acceptable for daemon bootstrap.
 	d.triggerPendingSpawns()
 
 	// 4. Process lifecycle requests
@@ -401,7 +401,6 @@ func (d *Daemon) ensureWitnessRunning(rigName string) {
 	d.logger.Printf("Witness session for %s started successfully", rigName)
 }
 
-
 // getKnownRigs returns list of registered rig names.
 func (d *Daemon) getKnownRigs() []string {
 	rigsPath := filepath.Join(d.config.TownRoot, "mayor", "rigs.json")
@@ -425,7 +424,7 @@ func (d *Daemon) getKnownRigs() []string {
 }
 
 // triggerPendingSpawns polls pending polecat spawns and triggers those that are ready.
-// This is bootstrap mode - uses regex-based WaitForClaudeReady which is acceptable
+// This is bootstrap mode - uses regex-based Claude prompt detection which is acceptable
 // for daemon operations when no AI agent is guaranteed to be running.
 // The timeout is short (2s) to avoid blocking the heartbeat.
 func (d *Daemon) triggerPendingSpawns() {
@@ -444,7 +443,7 @@ func (d *Daemon) triggerPendingSpawns() {
 
 	d.logger.Printf("Found %d pending spawn(s), attempting to trigger...", len(pending))
 
-	// Trigger pending spawns (uses WaitForClaudeReady with short timeout)
+	// Trigger pending spawns (uses Claude prompt detection with short timeout)
 	results, err := polecat.TriggerPendingSpawns(d.config.TownRoot, triggerTimeout)
 	if err != nil {
 		d.logger.Printf("Error triggering spawns: %v", err)
