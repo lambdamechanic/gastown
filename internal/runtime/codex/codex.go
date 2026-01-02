@@ -6,13 +6,23 @@ import (
 	"errors"
 
 	"github.com/steveyegge/gastown/internal/runtime"
+	"github.com/steveyegge/gastown/internal/tmux"
 )
 
 // Runtime is the Codex runtime adapter.
 type Runtime struct {
-	Command        string
-	Args           []string
-	ReadinessStyle string
+	tmux          *tmux.Tmux
+	Command       string
+	Args          []string
+	ReadinessMode string
+}
+
+// New returns a Codex runtime adapter bound to a tmux instance.
+func New(t *tmux.Tmux) *Runtime {
+	return &Runtime{
+		tmux:          t,
+		ReadinessMode: runtime.ReadinessWarmup,
+	}
 }
 
 var errNotImplemented = errors.New("codex runtime adapter not wired yet")
@@ -50,8 +60,4 @@ func (r *Runtime) DetectRunning(ctx context.Context, handle runtime.SessionHandl
 // ListSessions lists Codex sessions.
 func (r *Runtime) ListSessions(ctx context.Context, filter runtime.SessionFilter) ([]runtime.SessionHandle, error) {
 	return nil, errNotImplemented
-}
-
-func init() {
-	runtime.Register("codex", &Runtime{})
 }

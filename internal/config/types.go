@@ -66,7 +66,7 @@ type BeadsConfig struct {
 
 // AgentState represents an agent's current state (*/state.json).
 type AgentState struct {
-	Role       string         `json:"role"`              // "mayor", "witness", etc.
+	Role       string         `json:"role"` // "mayor", "witness", etc.
 	LastActive time.Time      `json:"last_active"`
 	Session    string         `json:"session,omitempty"`
 	Extra      map[string]any `json:"extra,omitempty"`
@@ -244,8 +244,8 @@ type TownThemeConfig struct {
 // These are used when no explicit configuration is provided.
 func BuiltinRoleThemes() map[string]string {
 	return map[string]string{
-		"witness":  "rust",  // Red/rust - watchful, alert
-		"refinery": "plum",  // Purple - processing, refining
+		"witness":  "rust", // Red/rust - watchful, alert
+		"refinery": "plum", // Purple - processing, refining
 		// crew and polecat use rig theme by default (no override)
 	}
 }

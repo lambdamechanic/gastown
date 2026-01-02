@@ -20,10 +20,12 @@ type AgentRuntime interface {
 // StartOptions describes a new runtime session request.
 type StartOptions struct {
 	WorkDir       string
+	SessionID     string
 	RuntimeName   string
 	AccountDir    string
 	Env           map[string]string
 	InitialPrompt string
+	Command       string
 	Mode          string // "minimal" | "tmux"
 }
 

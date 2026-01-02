@@ -2,6 +2,7 @@
 package session
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"os"
@@ -12,8 +13,10 @@ import (
 
 	"github.com/steveyegge/gastown/internal/claude"
 	"github.com/steveyegge/gastown/internal/config"
-	"github.com/steveyegge/gastown/internal/constants"
 	"github.com/steveyegge/gastown/internal/rig"
+	"github.com/steveyegge/gastown/internal/runtime"
+	clauderuntime "github.com/steveyegge/gastown/internal/runtime/claude"
+	codexruntime "github.com/steveyegge/gastown/internal/runtime/codex"
 	"github.com/steveyegge/gastown/internal/tmux"
 )
 
@@ -45,6 +48,9 @@ type StartOptions struct {
 
 	// Issue is an optional issue ID to work on.
 	Issue string
+
+	// RuntimeName selects the runtime adapter (e.g., "claude", "codex").
+	RuntimeName string
 
 	// Command overrides the default "claude" command.
 	Command string
@@ -128,9 +134,15 @@ func (m *Manager) Start(polecat string, opts StartOptions) error {
 		workDir = m.polecatDir(polecat)
 	}
 
-	// Ensure Claude settings exist (autonomous role needs mail in SessionStart)
-	if err := claude.EnsureSettingsForRole(workDir, "polecat"); err != nil {
-		return fmt.Errorf("ensuring Claude settings: %w", err)
+	runtimeName := opts.RuntimeName
+	if runtimeName == "" {
+		runtimeName = "claude"
+	}
+	if runtimeName == "claude" {
+		// Ensure Claude settings exist (autonomous role needs mail in SessionStart)
+		if err := claude.EnsureSettingsForRole(workDir, "polecat"); err != nil {
+			return fmt.Errorf("ensuring Claude settings: %w", err)
+		}
 	}
 
 	// Create session
@@ -181,21 +193,24 @@ func (m *Manager) Start(polecat string, opts StartOptions) error {
 		// Export env vars inline so Claude's role detection works
 		command = config.BuildPolecatStartupCommand(m.rig.Name, polecat, m.rig.Path, "")
 	}
-	if err := m.tmux.SendKeys(sessionID, command); err != nil {
-		return fmt.Errorf("sending command: %w", err)
+	var rt runtime.AgentRuntime
+	switch runtimeName {
+	case "claude":
+		rt = clauderuntime.New(m.tmux)
+	case "codex":
+		rt = codexruntime.New(m.tmux)
+	default:
+		return fmt.Errorf("unknown runtime: %s", runtimeName)
 	}
-
-	// Wait for Claude to start (non-fatal: session continues even if this times out)
-	if err := m.tmux.WaitForCommand(sessionID, constants.SupportedShells, constants.ClaudeStartTimeout); err != nil {
-		// Non-fatal warning - Claude might still start
+	if _, err := rt.Start(context.Background(), runtime.StartOptions{
+		SessionID:   sessionID,
+		WorkDir:     workDir,
+		RuntimeName: runtimeName,
+		Command:     command,
+		Mode:        "tmux",
+	}); err != nil {
+		return fmt.Errorf("starting runtime: %w", err)
 	}
-
-	// Wait for Claude to be fully ready at the prompt (not just started)
-	// PRAGMATIC APPROACH: Use fixed delay rather than detection.
-	// WaitForClaudeReady has false positives (detects > in various contexts).
-	// Claude startup takes ~5-8 seconds on typical machines.
-	// 10 second delay is conservative but reliable.
-	time.Sleep(10 * time.Second)
 
 	// Inject startup nudge for predecessor discovery via /resume
 	// This becomes the session title in Claude Code's session picker
