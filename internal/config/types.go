@@ -200,6 +200,19 @@ func quoteForShell(s string) string {
 	return `"` + escaped + `"`
 }
 
+// RuntimeRegistryConfig represents global runtime registry configuration.
+type RuntimeRegistryConfig struct {
+	Default  string                          `json:"default,omitempty"`
+	Runtimes map[string]RuntimeAdapterConfig `json:"runtimes,omitempty"`
+}
+
+// RuntimeAdapterConfig represents a configured runtime adapter.
+type RuntimeAdapterConfig struct {
+	Bin       string `json:"bin,omitempty"`
+	Delivery  string `json:"delivery,omitempty"`
+	Readiness string `json:"readiness,omitempty"`
+}
+
 // ThemeConfig represents tmux theme settings for a rig.
 type ThemeConfig struct {
 	// Name picks from the default palette (e.g., "ocean", "forest").
