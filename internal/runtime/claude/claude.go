@@ -134,3 +134,9 @@ func (r *Runtime) ListSessions(ctx context.Context, filter runtime.SessionFilter
 	}
 	return handles, nil
 }
+
+func init() {
+	runtime.Register("claude", func(t *tmux.Tmux) runtime.AgentRuntime {
+		return New(t)
+	})
+}

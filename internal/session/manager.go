@@ -15,9 +15,10 @@ import (
 	"github.com/steveyegge/gastown/internal/config"
 	"github.com/steveyegge/gastown/internal/rig"
 	"github.com/steveyegge/gastown/internal/runtime"
-	clauderuntime "github.com/steveyegge/gastown/internal/runtime/claude"
-	codexruntime "github.com/steveyegge/gastown/internal/runtime/codex"
 	"github.com/steveyegge/gastown/internal/tmux"
+
+	_ "github.com/steveyegge/gastown/internal/runtime/claude"
+	_ "github.com/steveyegge/gastown/internal/runtime/codex"
 )
 
 // Common errors
@@ -193,14 +194,9 @@ func (m *Manager) Start(polecat string, opts StartOptions) error {
 		// Export env vars inline so Claude's role detection works
 		command = config.BuildPolecatStartupCommand(m.rig.Name, polecat, m.rig.Path, "")
 	}
-	var rt runtime.AgentRuntime
-	switch runtimeName {
-	case "claude":
-		rt = clauderuntime.New(m.tmux)
-	case "codex":
-		rt = codexruntime.New(m.tmux)
-	default:
-		return fmt.Errorf("unknown runtime: %s", runtimeName)
+	rt, err := runtime.Get(runtimeName, m.tmux)
+	if err != nil {
+		return err
 	}
 	if _, err := rt.Start(context.Background(), runtime.StartOptions{
 		SessionID:   sessionID,

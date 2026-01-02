@@ -3,26 +3,28 @@ package runtime
 import (
 	"fmt"
 	"sync"
+
+	"github.com/steveyegge/gastown/internal/tmux"
 )
 
 var (
 	registryMu sync.RWMutex
-	registry   = make(map[string]AgentRuntime)
+	registry   = make(map[string]func(*tmux.Tmux) AgentRuntime)
 )
 
 // Register adds a runtime adapter by name.
-func Register(name string, rt AgentRuntime) {
+func Register(name string, factory func(*tmux.Tmux) AgentRuntime) {
 	registryMu.Lock()
 	defer registryMu.Unlock()
-	registry[name] = rt
+	registry[name] = factory
 }
 
 // Get returns a registered runtime adapter by name.
-func Get(name string) (AgentRuntime, error) {
+func Get(name string, t *tmux.Tmux) (AgentRuntime, error) {
 	registryMu.RLock()
 	defer registryMu.RUnlock()
-	if rt, ok := registry[name]; ok {
-		return rt, nil
+	if factory, ok := registry[name]; ok {
+		return factory(t), nil
 	}
 	return nil, fmt.Errorf("runtime not registered: %s", name)
 }
