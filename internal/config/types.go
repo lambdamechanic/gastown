@@ -65,15 +65,6 @@ type BeadsConfig struct {
 	Repo   string `json:"repo"`   // "local" | path | git-url
 	Prefix string `json:"prefix"` // issue prefix
 }
-
-// AgentState represents an agent's current state (*/state.json).
-type AgentState struct {
-	Role       string         `json:"role"` // "mayor", "witness", etc.
-	LastActive time.Time      `json:"last_active"`
-	Session    string         `json:"session,omitempty"`
-	Extra      map[string]any `json:"extra,omitempty"`
-}
-
 // CurrentTownVersion is the current schema version for TownConfig.
 // Version 2: Added Owner and PublicName fields for federation identity.
 const CurrentTownVersion = 2
