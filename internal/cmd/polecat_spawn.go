@@ -122,7 +122,9 @@ func SpawnPolecatForSling(rigName string, opts SlingSpawnOptions) (*SpawnedPolec
 		fmt.Printf("Polecat created. Agent must be started manually.\n\n")
 		fmt.Printf("To start the agent:\n")
 		fmt.Printf("  cd %s\n", polecatObj.ClonePath)
-		fmt.Printf("  %s\n\n", config.GetRuntimeCommand(r.Path))
+		// Use rig's configured agent command
+		agentCmd := config.ResolveAgentConfig(townRoot, r.Path).BuildCommand()
+		fmt.Printf("  %s\n\n", agentCmd)
 		fmt.Printf("Agent will discover work via gt prime on startup.\n")
 
 		return &SpawnedPolecatInfo{
