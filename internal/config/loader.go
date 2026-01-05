@@ -838,69 +838,7 @@ func fillRuntimeDefaults(rc *RuntimeConfig) *RuntimeConfig {
 	if result.Args == nil {
 		result.Args = []string{"--dangerously-skip-permissions"}
 	}
-return result
-}
-
-func fallbackRuntimeConfigForRig(rigPath string) *RuntimeConfig {
-	if rigPath != "" {
-		if townDefault := LoadMayorRuntimeDefault(filepath.Dir(rigPath)); townDefault != "" {
-			return &RuntimeConfig{
-				Command: townDefault,
-				Args:    []string{"--dangerously-skip-permissions"},
-			}
-		}
-	}
-	return DefaultRuntimeConfig()
-}
-
-// ResolveRuntimeName returns the runtime adapter name for a rig.
-// If override is non-empty, it is returned directly.
-func ResolveRuntimeName(rigPath, override string) string {
-	if override != "" {
-		return override
-	}
-	rc := LoadRuntimeConfig(rigPath)
-	cmd := strings.ToLower(filepath.Base(rc.Command))
-	if strings.Contains(cmd, "codex") {
-		return "codex"
-	}
-	return "claude"
-}
-
-// ResolveRuntimeNameForRig returns the runtime adapter name for a rig,
-// honoring a town-level default before falling back to rig settings.
-func ResolveRuntimeNameForRig(rigPath, override string) string {
-	if override != "" {
-		return override
-	}
-	townRoot := filepath.Dir(rigPath)
-	if townDefault := LoadMayorRuntimeDefault(townRoot); townDefault != "" {
-		return townDefault
-	}
-	return ResolveRuntimeName(rigPath, "")
-}
-
-// LoadMayorRuntimeDefault returns the town-level default runtime, if any.
-func LoadMayorRuntimeDefault(townRoot string) string {
-	path := filepath.Join(townRoot, "mayor", "config.json")
-	cfg, err := LoadMayorConfig(path)
-	if err != nil {
-		return ""
-	}
-	return strings.TrimSpace(cfg.RuntimeDefault)
-}
-
-// LoadRuntimeConfigForTown returns a RuntimeConfig using the town-level default.
-func LoadRuntimeConfigForTown(townRoot string) *RuntimeConfig {
-	if townRoot != "" {
-		if townDefault := LoadMayorRuntimeDefault(townRoot); townDefault != "" {
-			return &RuntimeConfig{
-				Command: townDefault,
-				Args:    []string{"--dangerously-skip-permissions"},
-			}
-		}
-	}
-	return DefaultRuntimeConfig()
+	return result
 }
 
 // GetRuntimeCommand is a convenience function that returns the full command string
